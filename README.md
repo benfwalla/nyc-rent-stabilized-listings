@@ -7,6 +7,26 @@ across all five boroughs. All the data lives in PDFs that is hard to work with. 
 * Matches records to StreetEasy for my app [FirstMover](https://www.firstmovernyc.com/), which lets user get StreetEasy
 notifications before anyone else.
 
+---
+
+## Codebase Structure
+
+```
+├── 1_scanning/
+│   ├── scan.py                         # Extracts from PDFs
+│   └── Bronx/, Brooklyn/, etc.         # Borough-level outputs
+│
+├── 2_flatten_and_clean_addresses/
+│   └── flatten_and_clean.py           # Flattens 2-address rows
+│
+├── 3_clean_building_numbers/
+│   └── clean_building_numbers.ipynb   # Pattern-specific normalization
+│
+├── listings_with_clean_building_no.csv    # Final output
+└── README.md
+```
+---
+
 ## Project Workflow
 
 ### 1. PDF Parsing (`1_scanning/`)
@@ -28,9 +48,7 @@ notifications before anyone else.
 * Each type (e.g. hyphenated, lettered, fractional) was parsed and expanded where needed.
 * Edge cases like `143-19A TO 143-25A` were dissected and exploded into multiple rows with plausible building numbers.
 
----
-
-## Building Number Normalization Deep Dive
+#### Building Number Normalization Deep Dive
 
 StreetEasy and most mapping systems expect a single, clean number (e.g. `2216`, `63-18`, `222R`). NYC’s PDFs are the 
 pretty fucked up- especially Queens. Oh, Queens.
@@ -67,25 +85,6 @@ This section took the most. It splits, standardizes, or expands each of the foll
 
 ---
 
-## Codebase Structure
-
-```
-├── 1_scanning/
-│   ├── scan.py                         # Extracts from PDFs
-│   └── Bronx/, Brooklyn/, etc.         # Borough-level outputs
-│
-├── 2_flatten_and_clean_addresses/
-│   └── flatten_and_clean.py           # Flattens 2-address rows
-│
-├── 3_clean_building_numbers/
-│   └── clean_building_numbers.ipynb   # Pattern-specific normalization
-│
-├── listings_with_clean_building_no.csv    # Final output
-└── README.md
-```
-
----
-
 ## Reproducing This Project
 
 1. **Clone** the repo
@@ -107,5 +106,3 @@ python 1_scanning/scan.py
 python 2_flatten_and_clean_addresses/flatten_and_clean.py
 # open and run clean_building_numbers.ipynb sequentially
 ```
-
-Final file: `listings_with_clean_building_no.csv`
