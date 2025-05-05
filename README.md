@@ -1,133 +1,111 @@
 # NYC Rent-Stabilized Listings Data Normalization Project
 
-## Overview
-This project extracts, cleans, and standardizes data on rent-stabilized apartment buildings in New York City, producing 
-a clean CSV suitable for analysis.The raw data is sourced from the Rent Stabilized Buildings Lists published by the 
-NYC.gov Rent Guidelines Board. The process addresses the significant inconsistencies and formatting challenges inherent 
-in the original datasets.
-
-## Data Source
-[Rent Stabilized Buildings Lists](https://www.nycrgb.org/html/resources/rentstab.html)
-The site provides PDFs for each borough, listing rent-stabilized buildings as of October 2024.
+The New York City Rent Guidelines Board [publishes public datasets rent-stabilized apartment listings](https://rentguidelinesboard.cityofnewyork.us/resources/rent-stabilized-building-lists/)
+across all five boroughs. All the data lives in PDFs that is hard to work with. This project:
+* Cleans up and standardizes NYC.gov's raw listings.
+* Makes the data more searchable (via CSV, Google Sheets, visualizations).
+* Matches records to StreetEasy for my app [FirstMover](https://www.firstmovernyc.com/), which lets user get StreetEasy
+notifications before anyone else.
 
 ## Project Workflow
 
-### PDF Collection & Parsing
+### 1. PDF Parsing (`1_scanning/`)
 
-* Download and extract data from borough-specific PDFs.
-* Each PDF has its own quirks in formatting and structure.
+* Uses `pdfplumber` to extract tabular data from each borough’s PDF.
+* Normalizes quirks and layout variations (some had repeated headers, shifted columns, or ghost text).
+* Outputs a raw CSV with two sets of address columns (for corner buildings).
 
-### Address Flattening & Cleaning
+### 2. Cleaning the scanned data (`2_flatten_and_clean_addresses/`)
 
-* Standardize street names.
-* Handle multi-address listings.
-* Convert raw data into a consistent tabular format.
+* Flattens `BLDGNO1/STREET1` and `BLDGNO2/STREET2` into one row per address.
+* Standardizes:
+  * Cardinal directions (e.g. `E` → `East`)
+  * Street types (e.g. `Ave` → `Avenue`, `St` → `Street`)
+  * Ordinal suffixes (`12Th` → `12th`)
 
-### Building Number Normalization
+### 3. Building Number Normalization (`3_clean_building_numbers/`)
+* Handles the 9 distinct `BUILDING_NO` formats found in NYC datasets.
+* Each type (e.g. hyphenated, lettered, fractional) was parsed and expanded where needed.
+* Edge cases like `143-19A TO 143-25A` were dissected and exploded into multiple rows with plausible building numbers.
 
-* Apply borough-specific rules to standardize building numbers.
-* Account for NYC’s unique address conventions.
+---
 
-### CSV Output
+## Building Number Normalization Deep Dive
 
-* Export the cleaned, analysis-ready dataset for further use.
+StreetEasy and most mapping systems expect a single, clean number (e.g. `2216`, `63-18`, `222R`). NYC’s PDFs are the 
+pretty fucked up- especially Queens. Oh, Queens.
+
+This section took the most. It splits, standardizes, or expands each of the following:
+
+| # | Pattern                             | Example(s)                     | Count  |
+| - | ----------------------------------- | ------------------------------ |--------|
+| 1 | Plain number                        | `2216`                         | 34,884 |
+| 2 | Plain range                         | `953 TO 957`                   | 4,768  |
+| 3 | Number + letter suffix              | `1684A`, `67R`                 | 234    |
+| 4 | Fractional/decimal                  | `151 1/2`, `108.5`             | 32     |
+| 5 | Hyphenated (Queens)                 | `63-18`, `19-02`               | 8,188  |
+| 6 | Hyphenated range                    | `122-05 TO 122-07`             | 743    |
+| 7 | Hyphenated + letter suffix          | `84-24A`                       | 210    |
+| 8 | Range with letter suffix            | `711A TO 711D`, `222R TO 224R` | 2      |
+| 9 | Hyphenated range with letter suffix | `143-19A TO 143-25A`           | 58     |
+|   |                                     |                                | 49,119 |
+
+---
+
+## Challenges & Notes
+
+### PDF quirks
+* Every borough had different formatting.
+* Text alignment issues meant column detection relied on x-coordinates, not headers.
+
+### Address conventions
+* Queens-style addresses (`99-16`) required custom logic.
+* Ambiguous ranges (`10-26 TO 45595`) were truncated or dropped if invalid.
+
+### Overreporting > Underreporting
+* When in doubt, ranges were expanded to err on the side of completeness.
+
+---
 
 ## Codebase Structure
 
 ```
 ├── 1_scanning/
-│   ├── scan.py                         # Downloads and parses borough PDFs
-│   ├── Bronx/, Brooklyn/, ...         # Intermediate files per borough
-│   └── All NYC scanned.csv            # Aggregated raw data
+│   ├── scan.py                         # Extracts from PDFs
+│   └── Bronx/, Brooklyn/, etc.         # Borough-level outputs
 │
 ├── 2_flatten_and_clean_addresses/
-│   ├── flatten_and_clean.py           # Flattens and standardizes addresses
-│   └── listings_flattened_and_cleaned_address.csv
+│   └── flatten_and_clean.py           # Flattens 2-address rows
 │
 ├── 3_clean_building_numbers/
-│   ├── clean_building_numbers.ipynb   # Cleans and normalizes building numbers
-│   └── listings_with_clean_building_no.csv
+│   └── clean_building_numbers.ipynb   # Pattern-specific normalization
 │
-├── README.md
-└── pyproject.toml, uv.lock            # Dependencies
+├── listings_with_clean_building_no.csv    # Final output
+└── README.md
 ```
-
-## Data Cleaning Details
-
-### Cleaning `STREET`
-
-> *(This section can be expanded with more detail if needed.)*
-
-### Cleaning `BUILDING_NO`
-
-The `BUILDING_NO` column represents the building’s street number.
-Due to the diversity of NYC address conventions and inconsistent data entry, cleaning this field required handling a variety of patterns:
-
-* **Plain numbers:** `2216`, common in Manhattan, Bronx, Brooklyn.
-* **Ranges:** `953 TO 957`, for connected buildings.
-* **Hyphenated numbers:** `63-18`, common in Queens.
-* **Letter suffixes:** `1684A`, `67R`, for subunits.
-* **Fractions/Decimals:** `151 1/2`, `48.5`, for small or split properties.
-
-In the dataset of 49,119 records, each `BUILDING_NO` fell into one of nine patterns:
-
-| # | Pattern                             | Example(s)                               | Count      |
-| - | ----------------------------------- | ---------------------------------------- | ---------- |
-| 1 | Plain number (just digits)          | `2216`, `2220`, `2224`                   | 34,884     |
-| 2 | Plain range (X TO Y)                | `953 TO 957`, `791 TO 799`               | 4,768      |
-| 3 | Number + letter suffix              | `1684A`, `1684B`, `1684C`                | 234        |
-| 4 | Fractional or decimal number        | `151 1/2`, `108.5`, `129 1/2`            | 32         |
-| 5 | Hyphenated number (Queens style)    | `2-6`, `19-02`, `63-18`                  | 8,188      |
-| 6 | Hyphenated range (X-XX TO Y-YY)     | `122-05 TO 122-07`, `123-99 TO 124-01`   | 743        |
-| 7 | Hyphenated + letter suffix          | `34-72A`, `84-24A`, `172-25A`            | 210        |
-| 8 | Range with letter suffix            | `222R TO 224R`, `711A TO 711D`           | 2          |
-| 9 | Hyphenated range with letter suffix | `143-19A TO 143-25A`, `64-46A TO 64-72B` | 58         |
-|   | **Total**                           |                                          | **49,119** |
-
-### Special Challenges: Queens
-
-Queens addresses required custom logic due to the prevalence of block-building hyphenation and ambiguous ranges:
-
-* `10-26 TO 45595`: Treated as an error; only the first number was used.
-* `73-01 TO 75-99`: Spans multiple blocks and hundreds of buildings. Cleaning split the range by block and generated plausible building numbers.
-
-## Lessons & Challenges
-
-* **PDF Parsing:** Each borough’s PDF had inconsistent formatting, requiring custom extraction logic.
-* **Address Diversity:** NYC’s address conventions (especially in Queens) necessitated borough-specific cleaning strategies.
-* **Ambiguity Handling:** When unclear, the process favored overreporting to preserve data integrity.
-
-## How to Reproduce
-
-1. Clone the repository.
-2. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-# or if using Poetry or uv
-uv pip install
-```
-
-3. Run the scripts in order:
-
-   * `1_scanning/scan.py`
-   * `2_flatten_and_clean_addresses/flatten_and_clean.py`
-   * `3_clean_building_numbers/clean_building_numbers.ipynb`
-
-Each stage produces an intermediate cleaned CSV.
-
-## Output
-
-**Final cleaned CSV:**
-`3_clean_building_numbers/listings_with_clean_building_no.csv`
-This file contains the standardized, analysis-ready dataset.
-
-## Next Steps
-
-* Update borough-specific logic as new quirks are discovered.
-* Automate PDF downloads for future data releases.
-* Consider building a dashboard or API for easier access.
 
 ---
 
-Let me know if you'd like a `README.md` file exported.
+## Reproducing This Project
+
+1. **Clone** the repo
+
+```bash
+git clone https://github.com/benfwalla/nyc-rent-stabilized-listings.git
+```
+
+2. **Install dependencies**
+
+```bash
+uv pip install  # or pip install -r requirements.txt
+```
+
+3. **Run scripts in order**:
+
+```bash
+python 1_scanning/scan.py
+python 2_flatten_and_clean_addresses/flatten_and_clean.py
+# open and run clean_building_numbers.ipynb sequentially
+```
+
+Final file: `listings_with_clean_building_no.csv`
