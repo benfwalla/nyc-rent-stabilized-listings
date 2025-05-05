@@ -72,7 +72,7 @@ This section took the most. It splits, standardizes, or expands each of the foll
 
 ## Challenges & Notes
 
-### PDF quirks
+### PDF variability
 * Every borough had different formatting.
 * Text alignment issues meant column detection relied on x-coordinates, not headers.
 
