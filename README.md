@@ -22,6 +22,13 @@ notifications before anyone else.
 ├── 3_clean_building_numbers/
 │   └── clean_building_numbers.ipynb   # Pattern-specific normalization
 │
+├── 4_get_coordinates/
+│   ├── coordinates.ipynb              # Geocodes addresses using NYC's API
+│   └── listings_with_coordinates.csv  # Output with lat/long coordinates
+│
+├── 5_coordinates_complete/
+│   └── listing_with_coordinates_complete.csv  # Final dataset with manually filled missing coordinates
+│
 ├── listings_with_clean_building_no.csv    # Final output
 └── README.md
 ```
@@ -30,7 +37,6 @@ notifications before anyone else.
 ## Project Workflow
 
 ### 1. PDF Parsing (`1_scanning/`)
-
 * Uses `pdfplumber` to extract tabular data from each borough’s PDF.
 * Normalizes quirks and layout variations (some had repeated headers, shifted columns, or ghost text).
 * Outputs a raw CSV with two sets of address columns (for corner buildings).
@@ -47,6 +53,14 @@ notifications before anyone else.
 * Handles the 9 distinct `BUILDING_NO` formats found in NYC datasets.
 * Each type (e.g. hyphenated, lettered, fractional) was parsed and expanded where needed.
 * Edge cases like `143-19A TO 143-25A` were dissected and exploded into multiple rows with plausible building numbers.
+
+### 4. Geocoding Addresses (`4_get_coordinates/`)
+* Uses NYC's Geoclient API to add latitude and longitude coordinates to each address
+* Output is stored as `listings_with_coordinates.csv`
+
+### 5. Coordinates Completion (`5_coordinates_complete/`)
+* Manual retrieval of coordinates for addresses that couldn't be automatically geocoded in Step 4
+* Output is stored as `listing_with_coordinates_complete.csv`
 
 #### Building Number Normalization Deep Dive
 
