@@ -1,6 +1,6 @@
 # NYC Rent-Stabilized Listings Data Normalization Project
 
-*Final CSV: [listing_with_coordinates_complete.csv](5_coordinates_complete/listing_with_coordinates_complete.csv)
+* Final CSV: [listing_with_coordinates_complete.csv](5_coordinates_complete/listing_with_coordinates_complete.csv)
 * [Public Google Sheet](https://docs.google.com/spreadsheets/d/1_yUjWl9Z1z6T_8oRqXscOU6KFV25ECYgVO69lORFyxI/edit?usp=sharing)
 
 The New York City Rent Guidelines Board [publishes public datasets rent-stabilized apartment listings](https://rentguidelinesboard.cityofnewyork.us/resources/rent-stabilized-building-lists/)
