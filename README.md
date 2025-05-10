@@ -1,11 +1,18 @@
 # NYC Rent-Stabilized Listings Data Normalization Project
 
+*Final CSV: [listing_with_coordinates_complete.csv](5_coordinates_complete/listing_with_coordinates_complete.csv)
+* [Public Google Sheet](https://docs.google.com/spreadsheets/d/1_yUjWl9Z1z6T_8oRqXscOU6KFV25ECYgVO69lORFyxI/edit?usp=sharing)
+
 The New York City Rent Guidelines Board [publishes public datasets rent-stabilized apartment listings](https://rentguidelinesboard.cityofnewyork.us/resources/rent-stabilized-building-lists/)
 across all five boroughs. All the data lives in PDFs that is hard to work with. This project:
 * Cleans up and standardizes NYC.gov's raw listings.
 * Makes the data more searchable (via CSV, Google Sheets, visualizations).
 * Matches records to StreetEasy for my app [FirstMover](https://www.firstmovernyc.com/), which lets user get StreetEasy
 notifications before anyone else.
+
+_Note: The NYC Rent Guidelines Boards states its data "...do not indicate which apartments in these buildings are rent 
+stabilized, but rather, only those buildings that contain at least one rent stabilized unit." Further, the work below
+is a hobby project not affiliated with NYC.gov and may be subject to error._
 
 ---
 
@@ -29,7 +36,6 @@ notifications before anyone else.
 ├── 5_coordinates_complete/
 │   └── listing_with_coordinates_complete.csv  # Final dataset with manually filled missing coordinates
 │
-├── listings_with_clean_building_no.csv    # Final output
 └── README.md
 ```
 ---
