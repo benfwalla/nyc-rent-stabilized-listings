@@ -1,2 +1,4 @@
 .venv
 .idea
+
+/4_get_coordinates/geocoding.log

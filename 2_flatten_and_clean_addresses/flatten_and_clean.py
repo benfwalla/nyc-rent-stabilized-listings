@@ -56,7 +56,7 @@ def clean_street_name(street_raw, suffix_raw=None):
 def flatten_rent_stabilized(input_csv: Path, output_csv: Path):
     """
     Reads a rent-stabilized apartment CSV, flattens two address columns into one list,
-    standardizes street names, and writes the cleaned result to a new CSV.
+    standardizes street names, converts decimals numbers to fractions, and writes the cleaned result to a new CSV.
     """
     df = pd.read_csv(input_csv, dtype=str)
     rows = []
@@ -68,11 +68,17 @@ def flatten_rent_stabilized(input_csv: Path, output_csv: Path):
             suffix = row.get(suffix_col)
 
             if pd.notna(bldgno) and pd.notna(street):
+                # Handle .5 addresses as fractions
+                clean_bldgno = str(bldgno)
+                if re.match(r'^\d+\.5$', clean_bldgno):
+                    clean_bldgno = re.sub(r'\.5$', ' 1/2', clean_bldgno)
+                    print(f"Converted {bldgno} to {clean_bldgno}")
+
                 cleaned_street = clean_street_name(street, suffix)
                 rows.append({
                     "BOROUGH": row.get("BOROUGH"),
                     "ZIP": str(row.get("ZIP")).zfill(5) if pd.notna(row.get("ZIP")) else None,
-                    "BUILDING_NO": bldgno,
+                    "BUILDING_NO": clean_bldgno,
                     "STREET": cleaned_street,
                     "BLOCK": row.get("BLOCK"),
                     "LOT": row.get("LOT"),
